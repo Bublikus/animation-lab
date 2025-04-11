@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { AbstractAnimation } from './core/AbstractAnimation';
 import { SimpleShaderAnimation } from './animations/SimpleShaderAnimation';
 import { BounceAnimation } from './animations/BounceAnimation';
+import { FireworksAnimation } from './animations/FireworksAnimation';
 
 class AnimationManager {
     private scene: THREE.Scene;
@@ -9,8 +10,9 @@ class AnimationManager {
     private renderer: THREE.WebGLRenderer;
     private currentAnimation: AbstractAnimation | null = null;
     private animations: { [key: string]: new (scene: THREE.Scene) => AbstractAnimation } = {
+        'fireworks': FireworksAnimation,
         'bounce': BounceAnimation,
-        'simple-shader': SimpleShaderAnimation
+        'simple-shader': SimpleShaderAnimation,
     };
     private container: HTMLElement;
     private resizeObserver!: ResizeObserver;
