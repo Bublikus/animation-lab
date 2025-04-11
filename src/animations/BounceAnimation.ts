@@ -7,6 +7,7 @@ interface Ball {
     position: THREE.Vector2;
     radius: number;
     mass: number;
+    rotationSpeed: THREE.Vector3;
 }
 
 export class BounceAnimation extends AbstractAnimation {
@@ -43,7 +44,7 @@ export class BounceAnimation extends AbstractAnimation {
     }
 
     private createBall(color: number, radius: number, velocity: THREE.Vector2): Ball {
-        const geometry = new THREE.SphereGeometry(radius, 32, 32);
+        const geometry = new THREE.SphereGeometry(radius, 8, 8);
         const material = new THREE.MeshBasicMaterial({ 
             color: color,
             wireframe: true
@@ -57,7 +58,12 @@ export class BounceAnimation extends AbstractAnimation {
             velocity,
             position: new THREE.Vector2(0, 0),
             radius,
-            mass: radius * radius // Mass proportional to area
+            mass: radius * radius, // Mass proportional to area
+            rotationSpeed: new THREE.Vector3(
+                (Math.random() - 0.5) * 0.02,
+                (Math.random() - 0.5) * 0.02,
+                (Math.random() - 0.5) * 0.02
+            )
         };
     }
 
@@ -101,9 +107,12 @@ export class BounceAnimation extends AbstractAnimation {
     }
 
     update() {
-        // Update positions
+        // Update positions and rotations
         this.balls.forEach(ball => {
             ball.position.add(ball.velocity);
+            ball.mesh.rotation.x += ball.rotationSpeed.x;
+            ball.mesh.rotation.y += ball.rotationSpeed.y;
+            ball.mesh.rotation.z += ball.rotationSpeed.z;
         });
 
         // Check and resolve ball collisions
