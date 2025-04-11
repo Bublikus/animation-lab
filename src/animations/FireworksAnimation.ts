@@ -254,6 +254,27 @@ export class FireworksAnimation extends AbstractAnimation {
     }
 
     dispose() {
+        // Remove all particles
         this.particles.forEach(particle => this.removeParticle(particle));
+        this.particles = [];
+
+        // Clear any pending timeouts
+        const highestTimeoutId = window.setTimeout(() => {}, 0);
+        for (let i = 0; i < highestTimeoutId; i++) {
+            window.clearTimeout(i);
+        }
+
+        // Remove all bodies from the physics world
+        while (this.world.bodies.length > 0) {
+            this.world.removeBody(this.world.bodies[0]);
+        }
+
+        // Remove all contact materials
+        this.world.contactmaterials = [];
+        this.world.contactMaterialTable.reset();
+
+        // Reset the world's state
+        this.world.gravity.set(0, -4.91, 0);
+        this.world.broadphase = new CANNON.NaiveBroadphase();
     }
 } 
