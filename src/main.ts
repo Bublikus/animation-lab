@@ -1,19 +1,12 @@
 import * as THREE from 'three';
 import { AbstractAnimation } from './core/AbstractAnimation';
-import { SimpleShaderAnimation } from './animations/SimpleShaderAnimation';
-import { BounceAnimation } from './animations/BounceAnimation';
-import { FireworksAnimation } from './animations/FireworksAnimation';
+import { animations } from './animations';
 
 class AnimationManager {
     private scene: THREE.Scene;
     private camera: THREE.OrthographicCamera;
     private renderer: THREE.WebGLRenderer;
     private currentAnimation: AbstractAnimation | null = null;
-    private animations: { [key: string]: new (scene: THREE.Scene) => AbstractAnimation } = {
-        'fireworks': FireworksAnimation,
-        'bounce': BounceAnimation,
-        'simple-shader': SimpleShaderAnimation,
-    };
     private container: HTMLElement;
     private resizeObserver!: ResizeObserver;
     private animationFrameId: number | null = null;
@@ -82,19 +75,27 @@ class AnimationManager {
 
         select.innerHTML = '';
 
-        // Get the first animation key (most recently added)
-        const firstAnimationKey = Object.keys(this.animations)[0];
-
-        Object.keys(this.animations).forEach(key => {
+        // Add all animations from the index file
+        animations.forEach((animationClass, index) => {
             const option = document.createElement('option');
-            option.value = key;
-            option.textContent = key.replace(/-/g, ' ');
+            // Use the class name as the value, removing 'Animation' suffix
+            const name = animationClass.name.replace('Animation', '').toLowerCase();
+            option.value = name;
+            // Format the display name (e.g., 'PentagonRotation' -> 'pentagon rotation')
+            const displayName = animationClass.name
+                .replace('Animation', '')
+                .replace(/([A-Z])/g, ' $1')
+                .toLowerCase()
+                .trim();
+            option.textContent = displayName;
             select.appendChild(option);
-        });
 
-        // Select the first animation
-        select.value = firstAnimationKey;
-        this.loadAnimation(firstAnimationKey);
+            // Select the first animation by default
+            if (index === 0) {
+                select.value = name;
+                this.loadAnimation(name);
+            }
+        });
 
         select.addEventListener('change', (e) => {
             const target = e.target as HTMLSelectElement;
@@ -107,8 +108,13 @@ class AnimationManager {
             this.currentAnimation.dispose();
         }
 
-        if (name && this.animations[name]) {
-            this.currentAnimation = new this.animations[name](this.scene);
+        // Find the animation class by name
+        const animationClass = animations.find(
+            cls => cls.name.replace('Animation', '').toLowerCase() === name
+        );
+
+        if (animationClass) {
+            this.currentAnimation = new animationClass(this.scene);
         }
     }
 
