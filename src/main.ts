@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { AbstractAnimation } from './core/AbstractAnimation';
-import { animations } from './animations';
+
+type AnimationConstructor = new (scene: THREE.Scene) => AbstractAnimation;
 
 class AnimationManager {
     private scene: THREE.Scene;
@@ -10,6 +11,7 @@ class AnimationManager {
     private container: HTMLElement;
     private resizeObserver!: ResizeObserver;
     private animationFrameId: number | null = null;
+    private availableAnimations: { name: string; constructor: AnimationConstructor }[] = [];
 
     constructor() {
         this.scene = new THREE.Scene();
@@ -27,7 +29,63 @@ class AnimationManager {
         this.setupCamera();
         this.setupSelect();
         this.setupResizeHandler();
+        this.loadAnimations();
         this.animate();
+    }
+
+    private async loadAnimations() {
+        try {
+            // Dynamically import all files from the animations directory
+            const animationModules = await import.meta.glob('./animations/*.ts');
+            
+            for (const path of Object.keys(animationModules)) {
+                const module = await animationModules[path]();
+                // Get the first exported class from the module
+                const animationClass = Object.values(module as Record<string, unknown>)[0] as AnimationConstructor;
+                
+                if (animationClass && animationClass.prototype instanceof AbstractAnimation) {
+                    const name = path.split('/').pop()?.replace('.ts', '') || '';
+                    this.availableAnimations.push({ name, constructor: animationClass });
+                }
+            }
+            
+            // Sort animations alphabetically
+            this.availableAnimations.sort((a, b) => {
+                const nameA = a.name.replace('Animation', '').toLowerCase();
+                const nameB = b.name.replace('Animation', '').toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+            
+            // Update select options
+            this.updateSelectOptions();
+        } catch (error) {
+            console.error('Error loading animations:', error);
+        }
+    }
+
+    private updateSelectOptions() {
+        const select = document.getElementById('animation-select') as HTMLSelectElement;
+        if (!select) return;
+
+        select.innerHTML = '';
+        this.availableAnimations.forEach(({ name }, index) => {
+            const option = document.createElement('option');
+            // Format the name for display (e.g., "PentagonRotation" -> "pentagon rotation")
+            const displayName = name
+                .replace('Animation', '')
+                .replace(/([A-Z])/g, ' $1')
+                .toLowerCase()
+                .trim();
+            option.value = name;
+            option.textContent = displayName;
+            select.appendChild(option);
+
+            // Select the first animation by default
+            if (index === 0) {
+                select.value = name;
+                this.loadAnimation(name);
+            }
+        });
     }
 
     private setupRenderer() {
@@ -73,30 +131,6 @@ class AnimationManager {
         const select = document.getElementById('animation-select') as HTMLSelectElement;
         if (!select) throw new Error('Select element not found');
 
-        select.innerHTML = '';
-
-        // Add all animations from the index file
-        animations.forEach((animationClass, index) => {
-            const option = document.createElement('option');
-            // Use the class name as the value, removing 'Animation' suffix
-            const name = animationClass.name.replace('Animation', '').toLowerCase();
-            option.value = name;
-            // Format the display name (e.g., 'PentagonRotation' -> 'pentagon rotation')
-            const displayName = animationClass.name
-                .replace('Animation', '')
-                .replace(/([A-Z])/g, ' $1')
-                .toLowerCase()
-                .trim();
-            option.textContent = displayName;
-            select.appendChild(option);
-
-            // Select the first animation by default
-            if (index === 0) {
-                select.value = name;
-                this.loadAnimation(name);
-            }
-        });
-
         select.addEventListener('change', (e) => {
             const target = e.target as HTMLSelectElement;
             this.loadAnimation(target.value);
@@ -108,13 +142,9 @@ class AnimationManager {
             this.currentAnimation.dispose();
         }
 
-        // Find the animation class by name
-        const animationClass = animations.find(
-            cls => cls.name.replace('Animation', '').toLowerCase() === name
-        );
-
-        if (animationClass) {
-            this.currentAnimation = new animationClass(this.scene);
+        const animation = this.availableAnimations.find(a => a.name === name);
+        if (animation) {
+            this.currentAnimation = new animation.constructor(this.scene);
         }
     }
 
