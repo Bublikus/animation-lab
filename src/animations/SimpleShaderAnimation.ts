@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { BaseAnimation } from './BaseAnimation';
+import { AbstractAnimation } from '../core/AbstractAnimation';
 
-export class SimpleShaderAnimation extends BaseAnimation {
+export class SimpleShaderAnimation extends AbstractAnimation {
     private mesh: THREE.Mesh;
 
     constructor(scene: THREE.Scene) {

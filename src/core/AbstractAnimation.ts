@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-export abstract class BaseAnimation {
+export abstract class AbstractAnimation {
     protected scene: THREE.Scene;
     protected time: number = 0;
 

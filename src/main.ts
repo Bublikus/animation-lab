@@ -1,13 +1,15 @@
 import * as THREE from 'three';
+import { AbstractAnimation } from './core/AbstractAnimation';
 import { SimpleShaderAnimation } from './animations/SimpleShaderAnimation';
-import { BaseAnimation } from './animations/BaseAnimation';
+import { BounceAnimation } from './animations/BounceAnimation';
 
 class AnimationManager {
     private scene: THREE.Scene;
     private camera: THREE.OrthographicCamera;
     private renderer: THREE.WebGLRenderer;
-    private currentAnimation: BaseAnimation | null = null;
-    private animations: { [key: string]: new (scene: THREE.Scene) => BaseAnimation } = {
+    private currentAnimation: AbstractAnimation | null = null;
+    private animations: { [key: string]: new (scene: THREE.Scene) => AbstractAnimation } = {
+        'bounce': BounceAnimation,
         'simple-shader': SimpleShaderAnimation
     };
     private container: HTMLElement;
@@ -78,17 +80,19 @@ class AnimationManager {
 
         select.innerHTML = '';
 
-        Object.keys(this.animations).forEach((key, index) => {
+        // Get the first animation key (most recently added)
+        const firstAnimationKey = Object.keys(this.animations)[0];
+
+        Object.keys(this.animations).forEach(key => {
             const option = document.createElement('option');
             option.value = key;
             option.textContent = key.replace(/-/g, ' ');
             select.appendChild(option);
-
-            if (index === 0) {
-                select.value = key;
-                this.loadAnimation(key);
-            }
         });
+
+        // Select the first animation
+        select.value = firstAnimationKey;
+        this.loadAnimation(firstAnimationKey);
 
         select.addEventListener('change', (e) => {
             const target = e.target as HTMLSelectElement;
