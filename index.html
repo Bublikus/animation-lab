@@ -26,13 +26,14 @@
         padding: min(20px, 2vh);
       }
       #animation-container {
-        width: min(600px, 90vw);
-        height: min(600px, 90vw);
-        margin-top: min(20px, 2vh);
-        border: 2px solid #333;
+        width: min(1082px, 90vw);
+        height: min(1082px, 90vw);
+        margin-bottom: min(20px, 2vh);
+        border: 2px solid #fff;
         border-radius: 8px;
         overflow: hidden;
         position: relative;
+        box-sizing: content-box;
         background-color: black;
       }
       #animation-container canvas {
@@ -61,13 +62,32 @@
       select:focus {
         box-shadow: 0 0 0 2px #666;
       }
+      .controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      #border-radius-toggle {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+      }
     </style>
   </head>
   <body>
-    <select id="animation-select">
-      <option value="">Select an animation</option>
-    </select>
     <div id="animation-container"></div>
+    <div class="controls">
+      <select id="animation-select">
+        <option value="">Select an animation</option>
+      </select>
+      <input type="checkbox" id="border-radius-toggle">
+    </div>
     <script type="module" src="./src/main.ts"></script>
+    <script>
+      document.getElementById('border-radius-toggle').addEventListener('change', function(e) {
+        const container = document.getElementById('animation-container');
+        container.style.borderRadius = e.target.checked ? '0' : '8px';
+      });
+    </script>
   </body>
 </html> 
