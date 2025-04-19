@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { AbstractAnimation } from '../core/AbstractAnimation';
-import * as Ammo from 'ammo.js';
+import Ammo from 'ammojs-typed';
 
 export class SoftBodyAnimation extends AbstractAnimation {
     private physicsWorld: Ammo.btSoftRigidDynamicsWorld | null = null;
@@ -14,7 +14,8 @@ export class SoftBodyAnimation extends AbstractAnimation {
     private async initPhysics() {
         try {
             // Initialize Ammo.js
-            this.ammoModule = await new Ammo();
+            // @ts-ignore
+            this.ammoModule = (await new Ammo()) as typeof Ammo;
             
             // Configure physics world
             const collisionConfiguration = new this.ammoModule.btSoftBodyRigidBodyCollisionConfiguration();
