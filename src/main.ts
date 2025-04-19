@@ -44,7 +44,7 @@ class AnimationManager {
                 const animationClass = Object.values(module as Record<string, unknown>)[0] as AnimationConstructor;
                 
                 if (animationClass && animationClass.prototype instanceof AbstractAnimation) {
-                    const name = path.split('/').pop()?.replace('.ts', '') || '';
+                    const name = path.split('/').pop()?.replace('.ts', '').replace(/(^[0-9]+)_/, '$1. ') || '';
                     this.availableAnimations.push({ name, constructor: animationClass });
                 }
             }
@@ -53,7 +53,7 @@ class AnimationManager {
             this.availableAnimations.sort((a, b) => {
                 const nameA = a.name.replace('Animation', '').toLowerCase();
                 const nameB = b.name.replace('Animation', '').toLowerCase();
-                return nameA.localeCompare(nameB);
+                return nameB.localeCompare(nameA);
             });
             
             // Update select options
