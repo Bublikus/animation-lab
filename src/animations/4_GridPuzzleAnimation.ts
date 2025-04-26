@@ -33,25 +33,38 @@ export class GridPuzzleAnimation extends AbstractAnimation {
     private updateGridSizeAndOffset() {
         // Get camera from scene.userData (set in main.ts) or fallback to default
         // We'll assume camera is always orthographic and covers [-aspect, aspect] x [-1, 1]
-        // Find the current aspect ratio
-        let aspect = 1;
+        // Find the current camera bounds
+        let left = -1, right = 1, top = 1, bottom = -1;
         if ((this.scene as any).userData && (this.scene as any).userData.camera) {
             const camera = (this.scene as any).userData.camera;
-            aspect = (camera.right - camera.left) / (camera.top - camera.bottom);
+            left = camera.left;
+            right = camera.right;
+            top = camera.top;
+            bottom = camera.bottom;
         } else if ((window as any).appCamera) {
-            // fallback if main.ts sets a global
             const camera = (window as any).appCamera;
-            aspect = (camera.right - camera.left) / (camera.top - camera.bottom);
+            left = camera.left;
+            right = camera.right;
+            top = camera.top;
+            bottom = camera.bottom;
         } else if (window.innerWidth && window.innerHeight) {
-            aspect = window.innerWidth / window.innerHeight;
+            const aspect = window.innerWidth / window.innerHeight;
+            if (aspect > 1) {
+                left = -aspect;
+                right = aspect;
+                top = 1;
+                bottom = -1;
+            } else {
+                left = -1;
+                right = 1;
+                top = 1 / aspect;
+                bottom = -1 / aspect;
+            }
         }
-        // Find the max square area that fits in [-aspect, aspect] x [-1, 1]
-        let gridWorldSize = 2; // default for portrait
-        if (aspect > 1) {
-            gridWorldSize = 2; // height is 2
-        } else {
-            gridWorldSize = 2 * aspect; // width is 2*aspect
-        }
+        // Use the minimum of width and height to keep the grid square and as large as possible
+        const width = right - left;
+        const height = top - bottom;
+        const gridWorldSize = Math.min(width, height);
         this.SQUARE_SIZE = gridWorldSize / this.GRID_SIZE;
         // Center the grid
         this.offset = -this.SQUARE_SIZE * this.GRID_SIZE / 2 + this.SQUARE_SIZE / 2;
