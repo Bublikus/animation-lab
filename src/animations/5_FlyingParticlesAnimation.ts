@@ -79,7 +79,8 @@ export class FlyingParticlesAnimation extends AbstractAnimation {
             // Tail geometry
             const tailPositions = Array.from({ length: this.TAIL_LENGTH }, () => new THREE.Vector3());
             const tailGeometry = new THREE.BufferGeometry().setFromPoints(tailPositions);
-            const tailMaterial = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.7 });
+            // Enable vertex colors for fading effect
+            const tailMaterial = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 1, vertexColors: true });
             const tail = new THREE.Line(tailGeometry, tailMaterial);
             this.group.add(tail);
 
@@ -120,6 +121,16 @@ export class FlyingParticlesAnimation extends AbstractAnimation {
             p.tailPositions.unshift(new THREE.Vector3(x, y, 0));
             if (p.tailPositions.length > this.TAIL_LENGTH) p.tailPositions.pop();
             (p.tail.geometry as THREE.BufferGeometry).setFromPoints(p.tailPositions);
+            // Add fading effect using vertex colors
+            const colors = [];
+            for (let i = 0; i < p.tailPositions.length; i++) {
+                const t = i / (this.TAIL_LENGTH - 1);
+                const alpha = 1 - t;
+                colors.push(p.color.r, p.color.g, p.color.b, alpha);
+            }
+            // Set color attribute (RGBA)
+            const colorAttr = new Float32Array(colors);
+            (p.tail.geometry as THREE.BufferGeometry).setAttribute('color', new THREE.BufferAttribute(colorAttr, 4));
         }
     }
 
