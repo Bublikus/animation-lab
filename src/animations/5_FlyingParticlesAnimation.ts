@@ -63,6 +63,10 @@ export class FlyingParticlesAnimation extends AbstractAnimation {
     }
 
     private createParticles() {
+        const radius = Math.min(
+            (this.bounds.right - this.bounds.left),
+            (this.bounds.top - this.bounds.bottom)
+        ) * 0.4;
         for (let i = 0; i < this.PARTICLE_COUNT; i++) {
             const color = new THREE.Color(this.colors[i % this.colors.length]);
             const speed = 0.1 + Math.random() * 0.05;
@@ -70,14 +74,22 @@ export class FlyingParticlesAnimation extends AbstractAnimation {
             const phase = Math.random() * Math.PI * 2;
             const angleOffset = (i / this.PARTICLE_COUNT) * Math.PI * 2;
 
+            // Calculate initial position for this particle
+            const cx = (this.bounds.left + this.bounds.right) / 2;
+            const cy = (this.bounds.top + this.bounds.bottom) / 2;
+            const initialWave = Math.sin(phase + angleOffset * 2) * amplitude;
+            const initialX = cx + Math.cos(angleOffset) * (radius + initialWave);
+            const initialY = cy + Math.sin(angleOffset) * (radius + initialWave);
+            const initialPos = new THREE.Vector3(initialX, initialY, 0);
+
             // Particle mesh
             const geometry = new THREE.SphereGeometry(0.03, 12, 12);
             const material = new THREE.MeshBasicMaterial({ color });
             const mesh = new THREE.Mesh(geometry, material);
             this.group.add(mesh);
 
-            // Tail geometry
-            const tailPositions = Array.from({ length: this.TAIL_LENGTH }, () => new THREE.Vector3());
+            // Tail geometry - initialize all positions to the particle's starting position
+            const tailPositions = Array.from({ length: this.TAIL_LENGTH }, () => initialPos.clone());
             const tailGeometry = new THREE.BufferGeometry().setFromPoints(tailPositions);
             // Enable vertex colors for fading effect
             const tailMaterial = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 1, vertexColors: true });
