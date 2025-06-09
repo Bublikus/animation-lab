@@ -14,7 +14,7 @@ interface FlyingParticle {
 
 export class FlyingParticlesAnimation extends AbstractAnimation {
     private particles: FlyingParticle[] = [];
-    private readonly PARTICLE_COUNT = 10;
+    private readonly PARTICLE_COUNT = 15;
     private readonly TAIL_LENGTH = 40;
     private bounds: { left: number; right: number; top: number; bottom: number } = { left: -1, right: 1, top: 1, bottom: -1 };
     private group: THREE.Group;
@@ -70,7 +70,7 @@ export class FlyingParticlesAnimation extends AbstractAnimation {
         for (let i = 0; i < this.PARTICLE_COUNT; i++) {
             const color = new THREE.Color(this.colors[i % this.colors.length]);
             const speed = 0.1 + Math.random() * 0.05;
-            const amplitude = 0.1 + Math.random() * 0.2;
+            const amplitude = 0.05 + Math.random() * 0.1;
             const phase = Math.random() * Math.PI * 2;
             const angleOffset = (i / this.PARTICLE_COUNT) * Math.PI * 2;
 
