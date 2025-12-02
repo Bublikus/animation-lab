@@ -21,6 +21,7 @@ export class ControlledSphereAnimation extends AbstractAnimation {
     private targetScale = 0.9;
     private baseScale = 0.9;
     private lastDetected = 0;
+    private disposed = false;
     private video: HTMLVideoElement | null = null;
     private stream: MediaStream | null = null;
     private hands: InstanceType<HandsClass> | null = null;
@@ -65,6 +66,10 @@ export class ControlledSphereAnimation extends AbstractAnimation {
 
     private async setupHandTracking() {
         try {
+            if (this.disposed) {
+                return;
+            }
+
             const video = document.createElement('video');
             video.autoplay = true;
             video.playsInline = true;
@@ -81,10 +86,22 @@ export class ControlledSphereAnimation extends AbstractAnimation {
                 audio: false
             });
 
+            if (this.disposed) {
+                this.stopMediaStream();
+                this.cleanupVideoElement();
+                return;
+            }
+
             video.srcObject = this.stream;
             await video.play();
 
             const { Hands, Camera } = await this.loadHandLibraries();
+
+            if (this.disposed) {
+                this.stopMediaStream();
+                this.cleanupVideoElement();
+                return;
+            }
 
             this.hands = new Hands({
                 locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
@@ -106,7 +123,9 @@ export class ControlledSphereAnimation extends AbstractAnimation {
                 width: 640,
                 height: 480
             });
-            this.camera.start();
+            if (!this.disposed) {
+                this.camera.start();
+            }
         } catch (error) {
             console.error('Hand tracking setup failed', error);
         }
@@ -149,6 +168,7 @@ export class ControlledSphereAnimation extends AbstractAnimation {
     }
 
     dispose() {
+        this.disposed = true;
         this.group.removeFromParent();
         this.group.traverse((obj: THREE.Object3D) => {
             if (obj instanceof THREE.Mesh) {
@@ -159,20 +179,36 @@ export class ControlledSphereAnimation extends AbstractAnimation {
 
         if (this.camera) {
             this.camera.stop();
+            this.camera = null;
         }
 
         if (this.hands) {
             this.hands.close();
+            this.hands = null;
         }
 
+        this.stopMediaStream();
+        this.cleanupVideoElement();
+    }
+
+    private stopMediaStream() {
         if (this.stream) {
             this.stream.getTracks().forEach(track => track.stop());
+            this.stream = null;
+        }
+    }
+
+    private cleanupVideoElement() {
+        if (!this.video) {
+            return;
         }
 
-        if (this.video && this.video.parentElement) {
-            this.video.pause();
-            this.video.srcObject = null;
+        this.video.pause();
+        this.video.srcObject = null;
+        if (this.video.parentElement) {
             this.video.parentElement.removeChild(this.video);
         }
+
+        this.video = null;
     }
 }
