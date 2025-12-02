@@ -16,15 +16,15 @@ class AnimationManager {
     constructor() {
         this.scene = new THREE.Scene();
         this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
-        this.renderer = new THREE.WebGLRenderer({ 
+        this.renderer = new THREE.WebGLRenderer({
             antialias: true,
             alpha: true
         });
-        
+
         const container = document.getElementById('animation-container');
         if (!container) throw new Error('Container not found');
         this.container = container;
-        
+
         this.setupRenderer();
         this.setupCamera();
         this.setupSelect();
@@ -37,25 +37,25 @@ class AnimationManager {
         try {
             // Dynamically import all files from the animations directory
             const animationModules = await import.meta.glob('./animations/*.ts');
-            
+
             for (const path of Object.keys(animationModules)) {
                 const module = await animationModules[path]();
                 // Get the first exported class from the module
                 const animationClass = Object.values(module as Record<string, unknown>)[0] as AnimationConstructor;
-                
+
                 if (animationClass && animationClass.prototype instanceof AbstractAnimation) {
                     const name = path.split('/').pop()?.replace('.ts', '').replace(/(^[0-9]+)_/, '$1. ') || '';
                     this.availableAnimations.push({ name, constructor: animationClass });
                 }
             }
-            
+
             // Sort animations alphabetically
             this.availableAnimations.sort((a, b) => {
                 const nameA = a.name.replace('Animation', '').toLowerCase();
                 const nameB = b.name.replace('Animation', '').toLowerCase();
                 return nameB.localeCompare(nameA);
             });
-            
+
             // Update select options
             this.updateSelectOptions();
         } catch (error) {
@@ -68,7 +68,7 @@ class AnimationManager {
         if (!select) return;
 
         select.innerHTML = '';
-        this.availableAnimations.forEach(({ name }, index) => {
+        this.availableAnimations.forEach(({ name }) => {
             const option = document.createElement('option');
             // Format the name for display (e.g., "PentagonRotation" -> "pentagon rotation")
             const displayName = name
@@ -79,13 +79,19 @@ class AnimationManager {
             option.value = name;
             option.textContent = displayName;
             select.appendChild(option);
-
-            // Select the first animation by default
-            if (index === 0) {
-                select.value = name;
-                this.loadAnimation(name);
-            }
         });
+
+        const querySelection = this.getQuerySelectedAnimation();
+        const hasQueryMatch = this.availableAnimations.some(({ name }) => name === querySelection);
+        const selectedName = hasQueryMatch
+            ? (querySelection as string)
+            : this.availableAnimations[0]?.name;
+
+        if (selectedName) {
+            select.value = selectedName;
+            this.loadAnimation(selectedName);
+            this.updateQueryParam(selectedName);
+        }
     }
 
     private setupRenderer() {
@@ -102,7 +108,7 @@ class AnimationManager {
     private updateCameraAspect() {
         const width = this.container.clientWidth;
         const height = this.container.clientHeight;
-        
+
         const aspect = width / height;
         if (aspect > 1) {
             this.camera.left = -aspect;
@@ -115,7 +121,7 @@ class AnimationManager {
             this.camera.top = 1 / aspect;
             this.camera.bottom = -1 / aspect;
         }
-        
+
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(width, height);
     }
@@ -134,7 +140,20 @@ class AnimationManager {
         select.addEventListener('change', (e) => {
             const target = e.target as HTMLSelectElement;
             this.loadAnimation(target.value);
+            this.updateQueryParam(target.value);
         });
+    }
+
+    private getQuerySelectedAnimation(): string | null {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('animation');
+    }
+
+    private updateQueryParam(animationName: string) {
+        const params = new URLSearchParams(window.location.search);
+        params.set('animation', animationName);
+        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        window.history.replaceState({}, '', newUrl);
     }
 
     private loadAnimation(name: string) {
@@ -150,11 +169,11 @@ class AnimationManager {
 
     private animate() {
         this.animationFrameId = requestAnimationFrame(() => this.animate());
-        
+
         if (this.currentAnimation) {
             this.currentAnimation.update();
         }
-        
+
         this.renderer.render(this.scene, this.camera);
     }
 
@@ -170,4 +189,4 @@ class AnimationManager {
     }
 }
 
-new AnimationManager(); 
+new AnimationManager();
