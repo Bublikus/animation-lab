@@ -54,8 +54,8 @@ export class ControlledSphereAnimation extends AbstractAnimation {
 
     private async loadHandLibraries(): Promise<{ Hands: HandsClass; Camera: CameraClass }> {
         const [handsModule, cameraModule] = await Promise.all([
-            import(/* @vite-ignore */ 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.js'),
-            import(/* @vite-ignore */ 'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.4.1675466862/camera_utils.js')
+            import(/* @vite-ignore */ 'https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js'),
+            import(/* @vite-ignore */ 'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js')
         ]);
 
         return {
